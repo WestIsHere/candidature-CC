@@ -2,281 +2,285 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TERMINAL CCG - ACCÈS SÉCURISÉ</title>
+    <title>CCG DATABASE - CLASSIFIED - KUSANAGI</title>
     <style>
-        /* --- CSS GLOBALE ET AMBIANCE --- */
-        :root {
-            --bg-color: #0a0a0a;
-            --screen-bg: #000000;
-            --text-color: #a0e7ff; /* Cyan pâle style terminal */
-            --alert-color: #ff3333; /* Rouge alerte */
-            --scan-line-color: rgba(160, 231, 255, 0.05);
-        }
-
+        /* RESET & BASE */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
+            background-color: #050505;
+            color: #c8c8c8;
+            font-family: 'Courier New', Courier, monospace;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Courier New', Courier, monospace; /* Police style terminal */
             overflow: hidden;
         }
 
-        #monitor-frame {
-            width: 90%;
-            max-width: 1000px;
-            height: 80vh;
-            background-color: var(--screen-bg);
-            border: 4px solid #333;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(0, 200, 255, 0.2) inset, 0 0 50px rgba(0,0,0,0.8);
-            position: relative;
-            overflow: hidden;
-            padding: 20px;
-        }
-
-        /* Effet de "Scan lines" (vieil écran cathodique) */
-        #monitor-frame::before {
-            content: "";
-            position: absolute;
+        /* CRT EFFECT OVERLAY */
+        .scanlines {
+            position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(
-                to bottom,
-                var(--scan-line-color),
-                var(--scan-line-color) 2px,
-                transparent 2px,
-                transparent 4px
-            );
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
             pointer-events: none;
-            z-index: 100;
+            z-index: 10;
         }
-
-        /* --- SEQUENCE DE BOOT --- */
-        #boot-sequence {
-            color: var(--text-color);
-            font-size: 1.2rem;
-            white-space: pre-wrap;
-        }
-        .boot-line {
-            opacity: 0;
-            animation: fadeIn 0.1s forwards;
-        }
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-        @keyframes fadeIn { to { opacity: 1; } }
-
-        /* --- INTERFACE BUREAU (DESKTOP) --- */
-        #desktop-interface {
-            display: none; /* Caché pendant le boot */
-            height: 100%;
-            color: var(--text-color);
-        }
-
-        .top-bar {
-            border-bottom: 2px solid var(--text-color);
+        
+        /* MAIN TERMINAL WINDOW */
+        .terminal {
+            width: 900px;
+            height: 600px;
+            background-color: #0a0a0a;
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
             display: flex;
-            justify-content: space-between;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
-            font-weight: bold;
-        }
-
-        /* L'ONGLET "ALERTE" */
-        #alert-tab-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 60%;
-        }
-
-        .alert-button {
-            background-color: #2a0000;
-            border: 3px solid var(--alert-color);
-            color: var(--alert-color);
-            padding: 20px 40px;
-            font-family: inherit;
-            font-size: 1.5rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            flex-direction: column;
             position: relative;
-            box-shadow: 0 0 15px var(--alert-color);
-            transition: all 0.3s ease;
-            animation: pulseRed 2s infinite;
+            z-index: 1;
         }
 
-        .alert-button:hover {
-            background-color: var(--alert-color);
-            color: #000;
-        }
-
-        @keyframes pulseRed {
-            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(255, 51, 51, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
-        }
-
-        /* --- FENÊTRE MODALE DE LA LETTRE --- */
-        #letter-modal {
-            display: none;
-            position: absolute;
-            top: 5%; left: 5%; width: 90%; height: 90%;
-            background-color: rgba(0, 20, 30, 0.95);
-            border: 2px solid var(--text-color);
-            z-index: 200;
-            color: #ccc;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            background-color: var(--text-color);
-            color: #000;
-            padding: 10px;
-            font-weight: bold;
+        /* HEADER */
+        .header {
+            background-color: #1a1a1a;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+        .header-title {
+            color: #d82c2c; /* CCG Red */
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .status-light {
+            width: 10px;
+            height: 10px;
+            background-color: #0f0;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #0f0;
+            animation: pulse 2s infinite;
         }
 
-        .close-btn { cursor: pointer; font-weight: bold; }
-        .close-btn:hover { color: var(--alert-color); }
+        /* CONTENT AREA */
+        .main-body {
+            display: flex;
+            flex: 1;
+            height: 100%;
+        }
 
-        .letter-content {
+        /* SIDEBAR TABS */
+        .sidebar {
+            width: 200px;
+            background-color: #111;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #666;
+            padding: 15px 20px;
+            text-align: left;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        .tab-btn:hover {
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        .tab-btn.active {
+            background-color: #222;
+            color: #d82c2c;
+            border-left: 3px solid #d82c2c;
+            font-weight: bold;
+        }
+
+        /* DISPLAY SCREEN */
+        .display-screen {
+            flex: 1;
             padding: 30px;
-            font-size: 1.1rem;
-            line-height: 1.6;
+            overflow-y: auto;
+            color: #ddd;
+            position: relative;
         }
-        .letter-content strong { color: var(--text-color); }
-        .signature { margin-top: 40px; font-style: italic; color: var(--text-color); }
+        
+        /* SECTIONS */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-section.active {
+            display: block;
+        }
+
+        h2 {
+            border-bottom: 1px solid #d82c2c;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+        }
+
+        p { margin-bottom: 15px; line-height: 1.6; }
+        
+        strong { color: #fff; }
+        
+        .alert {
+            color: #d82c2c;
+            border: 1px solid #d82c2c;
+            padding: 10px;
+            background: rgba(216, 44, 44, 0.1);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .data-item {
+            background: #151515;
+            padding: 10px;
+            border-left: 2px solid #555;
+        }
+
+        /* ANIMATIONS */
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #d82c2c; }
 
     </style>
 </head>
 <body>
 
-    <div id="monitor-frame">
-        
-        <div id="boot-sequence"></div>
+    <div class="scanlines"></div>
 
-        <div id="desktop-interface">
-            <div class="top-bar">
-                <span>CCG-OS v.5.11 [TERMINAL DE COMMANDEMENT]</span>
-                <span id="clock">CONNEXION ÉTABLIE</span>
+    <div class="terminal">
+        <div class="header">
+            <div class="header-title">CCG // BUREAU DES DOSSIERS RESTREINTS</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem;">CONNEXION SÉCURISÉE</span>
+                <div class="status-light"></div>
+            </div>
+        </div>
+
+        <div class="main-body">
+            <div class="sidebar">
+                <button class="tab-btn active" onclick="openTab('identite')">01_IDENTITÉ</button>
+                <button class="tab-btn" onclick="openTab('psychologie')">02_PROFIL PSY</button>
+                <button class="tab-btn" onclick="openTab('histoire')">03_HISTORIQUE</button>
+                <button class="tab-btn" onclick="openTab('capacites')">04_CAPACITÉS</button>
+                <button class="tab-btn" onclick="openTab('simulation')">05_SIMULATION RP</button>
             </div>
 
-            <div id="alert-tab-container">
-                <button id="open-letter-btn" class="alert-button">
-                    [!] TRANSMISSION ENTRÉE PRIORITAIRE <br>
-                    <small style="font-size: 0.8rem;">Cliquez pour décrypter</small>
-                </button>
-            </div>
+            <div class="display-screen">
+                
+                <div id="identite" class="content-section active">
+                    <h2>Fiche Signalétique</h2>
+                    <div class="data-grid">
+                        <div class="data-item"><strong>NOM :</strong> Kusanagi</div>
+                        <div class="data-item"><strong>PRÉNOM :</strong> Kojinn</div>
+                        <div class="data-item"><strong>ÂGE :</strong> 19 ans</div>
+                        <div class="data-item"><strong>TYPE :</strong> Demi-humain (0.5)</div>
+                        <div class="data-item"><strong>STATUT :</strong> Civil (Surveillance)</div>
+                        <div class="data-item"><strong>COUVERTURE :</strong> Étudiant (Lettres)</div>
+                    </div>
+                    
+                    <div class="alert">
+                        ATTENTION : Espérance de vie estimée restante < 15 ans. Signes de vieillissement cellulaire accéléré sous surveillance.
+                    </div>
 
-            <div id="letter-modal">
-                <div class="modal-header">
-                    <span>>>> DOCUMENT: CANDIDATURE_CC</span>
-                    <span class="close-btn" id="close-letter-btn">[X] FERMER</span>
+                    <p><strong>Description physique :</strong><br>
+                    Le sujet présente une apparence trompeusement juvénile. Carrure athlétique, type coureur de fond, dissimulée sous des tenues amples. 1m78. Iris gris acier présentant une mydriase légère en situation de stress (réflexe de combat). Mains constamment bandées ou gantées pour dissimuler les stigmates d'entraînement intensif.</p>
                 </div>
-                <div class="letter-content">
-                    <p><strong>Objet :</strong> Candidature pour intégration à la Cellule de Commandement<br>
-                    <strong>De :</strong> [Kojinn Kusanagi], Inspecteur [3 eme classe]<br>
-                    <strong>À l'attention du :</strong> Comité de Direction du CCG</p>
 
-                    <p>Messieurs les Directeurs,</p>
+                <div id="psychologie" class="content-section">
+                    <h2>Évaluation Psychologique</h2>
+                    <p>Le sujet Kusanagi présente une dualité comportementale complexe. En société, il simule parfaitement la normalité : poli, effacé, étudiant moyen. C'est un masque social (Persona) maintenu avec une discipline de fer.</p>
+                    <p>En privé, ou face au danger, la personnalité conditionnée refait surface. Une froideur clinique, une absence totale d'hésitation et une hypervigilance paranoïaque. Kojinn ne vit pas, il survit. Il est conscient de sa propre "date de péremption", ce qui lui confère un fatalisme morbide mais aussi une absence de peur face à la mort.</p>
+                    <p><strong>Note de l'observateur :</strong> Il semble incapable de créer des liens durables, probablement un mécanisme de défense pour ne blesser personne lors de son décès prématuré inévitable.</p>
+                </div>
 
-                    <p>On dit souvent qu'un bon inspecteur est celui qui ne recule jamais. Après 3 ans passés à traquer les goules dans les ruelles de shibuya, j'ai appris qu'un bon inspecteur est surtout celui qui sait <em>quand</em> avancer.</p>
+                <div id="histoire" class="content-section">
+                    <h2>Dossier d'Origine [CLASSIFIÉ]</h2>
+                    <p><strong>Origine :</strong> Jardin Ensoleillé (Sunlit Garden).</p>
+                    <p>Né produit de l'élevage sélectif du clan Washuu. Kojinn était un "échec réussi". Physiquement au sommet de la performance humaine, mais dépourvu de l'agressivité aveugle nécessaire pour faire un bon nettoyeur pour l'organisation V.</p>
+                    <p>À 16 ans, suite à des résultats jugés "émotionnellement instables" lors des simulations d'élimination, il a été écarté du programme actif. Une anomalie administrative lui a permis d'éviter la purge. Il a été relâché dans le flux civil avec un dossier vierge, une sorte d'expérience sociologique pour voir comment un "soldat né" s'adapte à la paix.</p>
+                    <p>Il cherche désormais un sens à sa courte existence dans les livres, tout en vivant dans la terreur que ses anciens maîtres ne reviennent finir le travail.</p>
+                </div>
 
-                    <p>Ma Quinque est usée par les combats, et mon corps porte les cicatrices de nombreux affrontements. Je ne suis pas un scientifique ; je ne vous parlerai pas de taux de RC . Je suis un soldat qui a développé une compétence plus rare : <strong>la lecture du chaos</strong>.</p>
-
-                    <p>Je postule aujourd'hui pour le commandement car j'ai trop souvent vu des opérations échouer non pas par manque de puissance de feu, mais par manque de vision d'ensemble.</p>
-
-                    <p><strong>Ce que j'apporte à la table de commandement :</strong></p>
-                    <ul>
-                        <li><strong>L'instinct du prédateur :</strong> Sur le terrain, j'ai appris à penser comme eux. Je n'analyse pas une goule comme un spécimen de laboratoire, mais comme un adversaire tactique. Je sais anticiper les embuscades, repérer les leurres d'organisations comme Aogiri, et transformer un terrain désavantageux en piège mortel.</li>
-                        <li><strong>La stratégie par l'exemple :</strong> Je ne compte pas diriger depuis un écran à des kilomètres. Un véritable stratège doit comprendre la peur et l'adrénaline de ses hommes pour leur donner des ordres réalisables. Je sais quelle quantité de pression une escouade peut supporter avant de se briser, car je suis à leur place.</li>
-                        <li><strong>L'efficacité du mouvement :</strong> En combat, un mouvement inutile est une ouverture pour l'ennemi. À l'échelle d'une opération, c'est pareil. Je veux optimiser le déploiement de nos forces pour frapper les points faibles de l'ennemi (les leaders, les lignes de ravitaillement) plutôt que de s'épuiser dans des escarmouches sans fin.</li>
-                    </ul>
-
-                    <p>Je ne demande pas ce poste pour quitter le front, mais pour avoir les moyens de changer l'issue de la bataille avant même que le premier coup ne soit porté.</p>
-
-                    <p>Je veux que les jeunes inspecteurs sous mes ordres rentrent chez eux le soir. Et pour cela, il nous faut plus que de la force brute : il nous faut une tête pensante qui a connu l'odeur du sang.</p>
-
-                    <p>Je suis prêt à prendre ces responsabilités.</p>
-
-                    <p>Respectueusement,</p>
-
-                    <div class="signature">
-                        [Kojinn Kusanagi]<br>
-                        Inspecteur [3 eme classe]<br>
-                        <em>CCG - Division des Opérations</em>
+                <div id="capacites" class="content-section">
+                    <h2>Données de Combat</h2>
+                    
+                    <div class="data-grid">
+                        <div class="data-item"><strong>AGILITÉ :</strong> S (Supérieure)</div>
+                        <div class="data-item"><strong>RÉFLEXES :</strong> A+</div>
+                        <div class="data-item"><strong>RC TYPE :</strong> Négatif (Pas de Kagune)</div>
+                        <div class="data-item"><strong>RÉGÉNÉRATION :</strong> F (Humaine standard)</div>
                     </div>
-                    </div>
+
+                    <p><strong>Avantages Tactiques :</strong><br>
+                    Kojinn peut percevoir une attaque avant qu'elle ne soit lancée grâce à une ouïe surdéveloppée. Sa densité musculaire lui permet des sauts et des accélérations impossibles pour un humain normal. Il manie les objets contondants avec une précision létale.</p>
+
+                    <p><strong>Facteurs de Risque :</strong><br>
+                    Le sujet ne possède aucune défense biologique contre un Kagune. Une blessure grave est définitive. Il dépend de la nourriture humaine pour son énergie et s'épuise plus vite qu'une Ghoul lors d'affrontements prolongés.</p>
+                </div>
+
+                <div id="simulation" class="content-section">
+                    <h2>Extrait de Surveillance (RP)</h2>
+                    <p><em>Localisation : Bibliothèque Universitaire Kamii - 23h42.</em></p>
+                    <hr style="border: 0; border-bottom: 1px dashed #444; margin: 15px 0;">
+                    
+                    <p>Le silence. C'est ce que Kojinn préférait. Loin du vacarme du monde, loin des attentes.</p>
+                    <p>Il fit tourner son stylo entre ses phalanges bandées. Kant. La critique de la raison pure. Une lecture aride pour tenter de calmer un esprit qui ne dormait jamais vraiment. Soudain, un son déchira sa concentration. Pas un cri, non. Quelque chose de plus subtil. Le bruit mou d'une viande que l'on percute.</p>
+                    <p>Ses pupilles se rétractèrent. Son rythme cardiaque chuta instantanément, passant de 70 à 45 battements par minute. Le calme avant la tempête. Une odeur ferreuse traversa la ventilation.</p>
+                    <p>« Sang... » murmura-t-il, la voix blanche.</p>
+                    <p>Il ne regarda pas par la fenêtre, il n'en avait pas besoin. Il savait. Une ombre prédatrice rôdait dehors. Une Ghoul en chasse. Pour un étudiant normal, c'était un fait divers tragique à lire le lendemain. Pour lui, c'était un rappel de sa condition. Il n'était pas une proie, mais il n'était pas non plus le prédateur dominant ici.</p>
+                    <p>Lentement, avec une fluidité mécanique, il rangea ses livres. Chaque geste était calculé pour ne produire aucun son. Il devait s'exfiltrer. Non par lâcheté, mais par pragmatisme. Son temps sur cette terre était déjà compté, il n'allait pas en offrir les dernières minutes à un monstre affamé dans une ruelle sombre.</p>
+                </div>
+
             </div>
-
         </div>
     </div>
 
     <script>
-        // --- SCRIPT POUR GERER L'ANIMATION ---
+        function openTab(tabName) {
+            // Masquer tous les contenus
+            const contents = document.querySelectorAll('.content-section');
+            contents.forEach(content => content.classList.remove('active'));
 
-        const bootText = [
-            "> INITIALISATION DU NOYAU CCG...",
-            "> CHARGEMENT DES PROTOCOLES DE DÉFENSE...",
-            "> VÉRIFICATION BIOMÉTRIQUE... OK.",
-            "> SCAN DU RÉSEAU POUR MENACES RC... NÉGATIF.",
-            "> CONNEXION AUX SERVEURS CENTRAUX...",
-            "> ACCÈS AUTORISÉ. NIVEAU 3.",
-            "> CHARGEMENT DE L'INTERFACE UTILISATEUR..."
-        ];
+            // Désactiver tous les boutons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
 
-        const bootContainer = document.getElementById('boot-sequence');
-        const desktopInterface = document.getElementById('desktop-interface');
-        const openBtn = document.getElementById('open-letter-btn');
-        const closeBtn = document.getElementById('close-letter-btn');
-        const modal = document.getElementById('letter-modal');
+            // Activer le contenu cible
+            document.getElementById(tabName).classList.add('active');
 
-        let lineIndex = 0;
-
-        // Fonction pour afficher le texte de boot ligne par ligne
-        function typeBootSequence() {
-            if (lineIndex < bootText.length) {
-                const newLine = document.createElement('div');
-                newLine.className = 'boot-line';
-                newLine.textContent = bootText[lineIndex];
-                bootContainer.appendChild(newLine);
-                lineIndex++;
-                // Vitesse d'apparition des lignes (aléatoire pour faire réaliste)
-                setTimeout(typeBootSequence, Math.random() * 300 + 100);
-            } else {
-                // Fin du boot, on ajoute le curseur clignotant
-                const cursor = document.createElement('div');
-                cursor.className = 'blink';
-                cursor.textContent = "> _";
-                bootContainer.appendChild(cursor);
-
-                // Attendre 2 secondes puis afficher le bureau
-                setTimeout(() => {
-                    bootContainer.style.display = 'none';
-                    desktopInterface.style.display = 'block';
-                }, 2000);
-            }
+            // Activer le bouton cible
+            // On cherche le bouton qui a l'onclick correspondant
+            const activeBtn = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(tabName));
+            if (activeBtn) activeBtn.classList.add('active');
         }
-
-        // Lancer le boot au chargement
-        window.onload = typeBootSequence;
-
-        // Gérer l'ouverture/fermeture de la lettre
-        openBtn.addEventListener('click', () => {
-            modal.style.display = 'block';
-            // Petit son de clic futuriste (optionnel, nécessite un fichier audio)
-            // new Audio('click.mp3').play(); 
-        });
-
-        closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-
     </script>
-
 </body>
 </html>
